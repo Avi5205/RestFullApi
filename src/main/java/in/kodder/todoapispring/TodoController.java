@@ -1,9 +1,9 @@
-package in.kodder.todoapispring.controller;
+package in.kodder.todoapispring;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import in.kodder.todoapispring.Todo;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +18,25 @@ import java.util.Map;
 public class TodoController {
 
     private static List<Todo> todoList;
+    //    @Autowired
+//    @Qualifier("fakeTodoService") // Use "anotherTodoService" to switch to another implementation)
+    private TodoService todoService;
+    private TodoService todoService2;
 
-    public TodoController() {
+    public TodoController(
+            @Qualifier("anotherTodoService") TodoService todoService,
+            @Qualifier("fakeTodoService") TodoService todoService2) {
+        this.todoService = todoService;
+        this.todoService2 = todoService2;
         todoList = new ArrayList<>();
         todoList.add(new Todo(1, false, "Learn Spring Boot", 1));
         todoList.add(new Todo(2, true, "Complete Todo API", 1));
+
     }
 
     @GetMapping
     public ResponseEntity<List<Todo>> getTodos() {
+        System.out.println(this.todoService2.doSomething());
         return ResponseEntity.ok(todoList);
     }
 
@@ -64,17 +74,15 @@ public class TodoController {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // Add these imports at the top
-
-
     // Updated PATCH method
     @PatchMapping("/{todoId}")
     public ResponseEntity<?> updateTodo(@PathVariable Long todoId, @RequestBody String rawJson) {
         // Parse JSON manually
-        Map<String, Object> updates = new HashMap<>();
+        Map<String, Object> updates;
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            updates = objectMapper.readValue(rawJson, new TypeReference<Map<String, Object>>() {});
+            updates = objectMapper.readValue(rawJson, new TypeReference<>() {
+            });
         } catch (JsonProcessingException e) {
             Map<String, String> response = new HashMap<>();
             response.put("message", "Invalid JSON format");
